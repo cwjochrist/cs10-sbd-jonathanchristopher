@@ -15,19 +15,24 @@ class TransactionController {
 
     const total = quantity;
 
-    const streamKey = "transaction-logs";
+    let messageId = null;
+    if (redisClient) {
+      const streamKey = 'transaction-logs';
 
-    const messageId = await redisClient.xAdd(
-      streamKey,
-      "*",
-      {
-        userId: String(user_id),
-        itemId: String(item_id),
-        total: String(total),
-      }
-    );
+      messageId = await redisClient.xAdd(
+        streamKey,
+        '*',
+        {
+          userId: String(user_id),
+          itemId: String(item_id),
+          total: String(total),
+        }
+      );
 
-    console.log("Transaction logged to Redis Stream:", messageId);
+      console.log('Transaction logged to Redis Stream:', messageId);
+    } else {
+      console.log('Redis unavailable, skipping transaction stream logging');
+    }
 
     res.status(201).json({
       success: true,

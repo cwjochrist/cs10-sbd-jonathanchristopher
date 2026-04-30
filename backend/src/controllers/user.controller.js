@@ -37,9 +37,11 @@ class UserController {
       const { id, name, username, email, phone, password, balance } = req.body;
       const updatedUser = await UserService.updateProfile(id, { name, username, email, phone, password, balance });
       
-      const cacheKey = `user:${email.toLowerCase()}`;
-      await redisClient.del(cacheKey);
-      console.log("Cache deleted:", cacheKey);
+      if (redisClient) {
+        const cacheKey = `user:${email.toLowerCase()}`;
+        await redisClient.del(cacheKey);
+        console.log('Cache deleted:', cacheKey);
+      }
       
       res.status(200).json({
         success: true,
@@ -84,26 +86,29 @@ class UserController {
       const { email } = req.params;
       const cacheKey = `user:${email}`;
 
-      const cachedData = await redisClient.get(cacheKey);
+      if (redisClient) {
+        const cachedData = await redisClient.get(cacheKey);
 
-      if (cachedData){
-        console.log("Cache Hit");
-        return res.status(200).json({
-          success: true,
-          message: 'User retrieved from cache',
-          payload: JSON.parse(cachedData)
-        })
+        if (cachedData) {
+          console.log('Cache Hit');
+          return res.status(200).json({
+            success: true,
+            message: 'User retrieved from cache',
+            payload: JSON.parse(cachedData),
+          });
+        }
       }
       
-
-      console.log ("Cache Miss");
+      console.log('Cache Miss');
       const user = await UserService.getUserbyEmail(email);
 
       if (!user) {
-        throw new AppError("User not found", 404);
+        throw new AppError('User not found', 404);
       }
 
-      await redisClient.setEx(cacheKey, 60, JSON.stringify(user));
+      if (redisClient) {
+        await redisClient.setEx(cacheKey, 60, JSON.stringify(user));
+      }
 
       return res.status(200).json({
         success: true,
