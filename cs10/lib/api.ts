@@ -10,14 +10,23 @@ type RequestOptions = RequestInit & {
   token?: string;
 };
 
+function getStoredToken(): string | undefined {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  return localStorage.getItem("token") || undefined;
+}
+
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { token, headers, ...restOptions } = options;
+  const resolvedToken = token ?? getStoredToken();
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...restOptions,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(resolvedToken ? { Authorization: `Bearer ${resolvedToken}` } : {}),
       ...(headers || {}),
     },
   });
