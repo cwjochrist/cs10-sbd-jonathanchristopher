@@ -24,16 +24,32 @@ const defaultAllowedOrigins = [
   'http://127.0.0.1:3001',
 ];
 
+const normalizeOrigin = (origin) => (origin ? origin.replace(/\/$/, '') : origin);
+
 const envAllowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
-  .map((origin) => origin.trim())
+  .map((origin) => normalizeOrigin(origin.trim()))
   .filter(Boolean);
 
 const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
 
-app.use(cors({
+const allowedOriginRegex = process.env.ALLOWED_ORIGIN_REGEX
+  ? new RegExp(process.env.ALLOWED_ORIGIN_REGEX)
+  : null;
+
+const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    const normalizedOrigin = normalizeOrigin(origin);
+
+    if (!normalizedOrigin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(normalizedOrigin)) {
+      return callback(null, true);
+    }
+
+    if (allowedOriginRegex?.test(normalizedOrigin)) {
       return callback(null, true);
     }
 
@@ -43,7 +59,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
   optionsSuccessStatus: 204,
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Rate limiting for auth endpoints
 const authLimiter = rateLimit({
