@@ -15,12 +15,18 @@ function getStoredToken(): string | undefined {
     return undefined;
   }
 
-  return localStorage.getItem("token") || undefined;
+  const rawToken = localStorage.getItem("token");
+  if (!rawToken) {
+    return undefined;
+  }
+
+  const normalizedToken = rawToken.replace(/^"|"$/g, "").trim();
+  return normalizedToken || undefined;
 }
 
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { token, headers, ...restOptions } = options;
-  const resolvedToken = token ?? getStoredToken();
+  const resolvedToken = (token ?? getStoredToken())?.replace(/^"|"$/g, "").trim();
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...restOptions,

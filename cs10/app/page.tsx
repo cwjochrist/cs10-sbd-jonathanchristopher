@@ -49,7 +49,6 @@ export default function Home() {
       return JSON.parse(userData) as LoggedInUser;
     } catch {
       localStorage.removeItem("user");
-      localStorage.removeItem("token");
       return null;
     }
   });

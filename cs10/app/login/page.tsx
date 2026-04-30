@@ -38,8 +38,18 @@ export default function LoginPage() {
       });
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("token", result.payload.token);
-        localStorage.setItem("user", JSON.stringify(result.payload.user));
+        const nextToken = result.payload?.token?.trim();
+        if (!nextToken) {
+          throw new Error("Login response did not include a token");
+        }
+
+        localStorage.setItem("token", nextToken);
+
+        if (result.payload?.user) {
+          localStorage.setItem("user", JSON.stringify(result.payload.user));
+        } else {
+          localStorage.removeItem("user");
+        }
       }
 
       setSuccessMessage("Login successful. Redirecting to item listing...");
