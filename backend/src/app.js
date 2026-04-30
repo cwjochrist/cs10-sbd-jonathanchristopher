@@ -67,7 +67,7 @@ app.options('*', cors(corsOptions));
 // Rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: Number.parseInt(process.env.AUTH_RATE_LIMIT_MAX, 10) || 25,
   message: 'Too many requests from this IP, please try again after 15 minutes',
 });
 app.use('/auth', authLimiter);
